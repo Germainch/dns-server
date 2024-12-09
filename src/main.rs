@@ -1,7 +1,6 @@
-use std::io::Read;
 #[allow(unused_imports)]
 use std::net::UdpSocket;
-use bytes::{BufMut, BytesMut};
+
 
 #[derive(Debug)]
 struct DnsHeader {
@@ -32,7 +31,7 @@ impl DnsHeader {
             z: 0,       // Reserved
             rcode: 0,   // Response Code
             qdcount: 0, // Question Count
-            ancount: 0, // Answer Record Count
+            ancount: 1, // Answer Record Count
             nscount: 0, // Authority Record Count
             arcount: 0, // Additional Record Count
         }
@@ -72,6 +71,24 @@ impl DnsHeader {
 
         bytes
     }
+    fn create(question: DnsQuestion, answer: DnsAnswer) -> Self {
+        // todo: implement this function
+        DnsHeader{
+            id: 0,
+            qr: 0,
+            opcode: 0,
+            aa: 0,
+            tc: 0,
+            rd: 0,
+            ra: 0,
+            z: 0,
+            rcode: 0,
+            qdcount: 0,
+            ancount: 0,
+            nscount: 0,
+            arcount: 0,
+        }
+    }
 }
 
 
@@ -104,6 +121,47 @@ impl DnsQuestion {
 }
 
 
+struct DnsAnswer {
+    name: Vec<u8>, // Domain name in labels
+    atype: u16,   // Answer Type 2-bytes integer
+    aclass: u16,  // Answer Class 2-bytes integer
+    ttl: u32,     // Time to Live 4-bytes integer
+    rdlength: u16, // Resource Data Length 2-bytes integer
+    rdata: Vec<u8>, // Resource Data
+}
+
+impl DnsAnswer {
+    fn new() -> Self {
+        DnsAnswer {
+            name: b"\x0ccodecrafters\x02io\x00".to_vec(),
+            atype: 1,
+            aclass: 1,
+            ttl: 60,
+            rdlength: 4,
+            rdata: vec![127, 0, 0, 1],
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let name_bytes = self.name.as_slice();
+        name_bytes.iter().for_each(|byte| bytes.push(*byte));
+        bytes.push((self.atype >> 8) as u8);
+        bytes.push((self.atype & 0xFF) as u8);
+        bytes.push((self.aclass >> 8) as u8);
+        bytes.push((self.aclass & 0xFF) as u8);
+        bytes.push((self.ttl >> 24) as u8);
+        bytes.push((self.ttl >> 16) as u8);
+        bytes.push((self.ttl >> 8) as u8);
+        bytes.push((self.ttl & 0xFF) as u8);
+        bytes.push((self.rdlength >> 8) as u8);
+        bytes.push((self.rdlength & 0xFF) as u8);
+        let rdata_bytes = self.rdata.as_slice();
+        rdata_bytes.iter().for_each(|byte| bytes.push(*byte));
+        bytes
+    }
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
@@ -127,11 +185,12 @@ fn main() {
     }
 }
 
-fn build_response(buf: [u8; 512], size: usize) -> [u8; 512] {
+fn build_response(_buf: [u8; 512], _size: usize) -> [u8; 512] {
     let mut response: [u8; 512] = [0; 512];
 
     let mut dnsheader = DnsHeader::new();
     dnsheader.qdcount = 1;
+
     let header = dnsheader.to_bytes();
     for i in 0..header.len() {
         response[i] = header[i];
@@ -139,6 +198,11 @@ fn build_response(buf: [u8; 512], size: usize) -> [u8; 512] {
     let question = DnsQuestion::new().to_bytes();
     for j in 0..question.len() {
         response[j + 12] = question[j];
+    }
+
+    let answer = DnsAnswer::new().to_bytes();
+    for k in 0..answer.len() {
+        response[k + 12 + question.len()] = answer[k];
     }
     response
 }
