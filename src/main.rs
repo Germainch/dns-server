@@ -76,7 +76,7 @@ impl DnsHeader {
 
 
 struct DnsQuestion {
-    name: String, // Domain name in labels
+    name: Vec<u8>, // Domain name in labels
     qtype: u16,   // Question Type 2-bytes integer
     qclass: u16,  // Question Class 2-bytes integer
 }
@@ -85,7 +85,7 @@ impl DnsQuestion {
 
     fn new() -> Self {
         DnsQuestion{
-            name: &b"\x0ccodecrafters\x02io\x00".to_string(),
+            name: b"\x0ccodecrafters\x02io\x00".to_vec(),
             qtype: 1,
             qclass: 1,
         }
@@ -93,7 +93,7 @@ impl DnsQuestion {
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        let name_bytes = self.name.as_bytes();
+        let name_bytes = self.name.as_slice();
         name_bytes.iter().for_each(|byte| bytes.push(*byte));
         bytes.push((self.qtype >> 8) as u8);
         bytes.push((self.qtype & 0xFF) as u8);
