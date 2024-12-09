@@ -85,9 +85,9 @@ impl DnsQuestion {
 
     fn new() -> Self {
         DnsQuestion{
-            name: "\x0ccodecrafters\x02io\x00".to_string(),
+            name: "codecrafters.io".to_string(),
             qtype: 1,
-            qclass: 2,
+            qclass: 1,
         }
     }
 
@@ -138,4 +138,10 @@ fn build_response(buf: [u8; 512], size: usize) -> BytesMut {
         response.put_u8(*byte);
     }
     response
+}
+
+#[test]
+fn test_dns_question(){
+    let question = DnsQuestion::new();
+    println!("{:?}", question.name);
 }
