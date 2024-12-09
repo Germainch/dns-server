@@ -97,13 +97,13 @@ impl DnsHeader {
     fn from_buf(p0: &[u8; 512]) -> Self {
         DnsHeader {
             id: (p0[0] as u16) << 8 | p0[1] as u16,
-            qr: p0[2] >> 7,
+            qr: 1,
             opcode: (p0[2] >> 3) & 0x0F,
-            aa: (p0[2] >> 2) & 0x01,
-            tc: (p0[2] >> 1) & 0x01,
+            aa: 0,
+            tc: 0,
             rd: p0[2] & 0x01,
-            ra: p0[3] >> 7,
-            z: (p0[3] >> 4) & 0x07,
+            ra: 0,
+            z: 0,
             rcode: p0[3] & 0x0F,
             qdcount: (p0[4] as u16) << 8 | p0[5] as u16,
             ancount: (p0[6] as u16) << 8 | p0[7] as u16,
