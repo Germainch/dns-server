@@ -130,7 +130,9 @@ fn main() {
 fn build_response(buf: [u8; 512], size: usize) -> [u8; 512] {
     let mut response: [u8; 512] = [0; 512];
 
-    let header = DnsHeader::new().to_bytes();
+    let mut dnsheader = DnsHeader::new();
+    dnsheader.qdcount = 1;
+    let header = dnsheader.to_bytes();
     for i in 0..header.len() {
         response[i] = header[i];
     }
