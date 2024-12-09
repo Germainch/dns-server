@@ -140,6 +140,25 @@ impl DnsQuestion {
         bytes.push((self.qclass & 0xFF) as u8);
         bytes
     }
+
+    fn from_buf(p0: &[u8; 512]) -> Self {
+        let mut i = 12;
+        let mut name = Vec::new();
+        while p0[i] != 0 {
+            let len = p0[i] as usize;
+            for j in 0..len {
+                name.push(p0[i + j + 1]);
+            }
+            name.push(b'.');
+            i += len + 1;
+        }
+        name.pop();
+        DnsQuestion {
+            name,
+            qtype: 1,
+            qclass: 1,
+        }
+    }
 }
 
 
@@ -180,6 +199,32 @@ impl DnsAnswer {
         let rdata_bytes = self.rdata.as_slice();
         rdata_bytes.iter().for_each(|byte| bytes.push(*byte));
         bytes
+    }
+    fn from_buf(p0: &[u8; 512]) -> Self {
+        let mut i = 12;
+        while p0[i] != 0 {
+            let len = p0[i] as usize;
+            i += len + 1;
+        }
+        i += 5;
+        let mut name = Vec::new();
+        while p0[i] != 0 {
+            let len = p0[i] as usize;
+            for j in 0..len {
+                name.push(p0[i + j + 1]);
+            }
+            name.push(b'.');
+            i += len + 1;
+        }
+        name.pop();
+        DnsAnswer {
+            name,
+            atype: 1,
+            aclass: 1,
+            ttl: 60,
+            rdlength: 4,
+            rdata: vec![127, 0, 0, 1],
+        }
     }
 }
 
@@ -234,12 +279,12 @@ fn parse_request(buf: [u8; 512], size: usize) -> [u8; 512] {
     for i in 0..header.len() {
         response[i] = header[i];
     }
-    let question = DnsQuestion::new().to_bytes();
+    let question = DnsQuestion::from_buf(&buf).to_bytes();
     for j in 0..question.len() {
         response[j + 12] = question[j];
     }
 
-    let answer = DnsAnswer::new().to_bytes();
+    let answer = DnsAnswer::from_buf(&buf).to_bytes();
     for k in 0..answer.len() {
         response[k + 12 + question.len()] = answer[k];
     }
