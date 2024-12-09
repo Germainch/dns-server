@@ -106,7 +106,7 @@ impl DnsHeader {
             z: 0,
             rcode: 4,
             qdcount: (p0[4] as u16) << 8 | p0[5] as u16,
-            ancount: (p0[6] as u16) << 8 | p0[7] as u16,
+            ancount: 1,
             nscount: (p0[8] as u16) << 8 | p0[9] as u16,
             arcount: (p0[10] as u16) << 8 | p0[11] as u16,
         }
