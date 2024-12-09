@@ -1,8 +1,8 @@
-use std::io::{BufReader, Read};
+use std::io::Read;
 #[allow(unused_imports)]
 use std::net::UdpSocket;
-use serde::{Deserialize, Serialize};
-use serde::de::IntoDeserializer;
+use bytes::{BufMut, BytesMut};
+
 #[derive(Debug)]
 struct DnsHeader {
     id: u16,
@@ -74,6 +74,36 @@ impl DnsHeader {
     }
 }
 
+
+struct DnsQuestion {
+    name: String, // Domain name in labels
+    qtype: u16,   // Question Type 2-bytes integer
+    qclass: u16,  // Question Class 2-bytes integer
+}
+
+impl DnsQuestion {
+
+    fn new() -> Self {
+        DnsQuestion{
+            name: "\x0ccodecrafters\x02io\x00".to_string(),
+            qtype: 1,
+            qclass: 2,
+        }
+    }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        let name_bytes = self.name.as_bytes();
+        name_bytes.iter().for_each(|byte| bytes.push(*byte));
+        bytes.push((self.qtype >> 8) as u8);
+        bytes.push((self.qtype & 0xFF) as u8);
+        bytes.push((self.qclass >> 8) as u8);
+        bytes.push((self.qclass & 0xFF) as u8);
+        bytes
+    }
+}
+
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
@@ -81,13 +111,24 @@ fn main() {
     let udp_socket = UdpSocket::bind("127.0.0.1:2053").expect("Failed to bind to address");
     let mut buf = [0; 512];
 
+    BytesMut::new().put_bytes();
+
     loop {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
-                let response = DnsHeader::new().to_bytes();
+                let response: Vec<&u8> = DnsHeader::new()
+                    .to_bytes()
+                    .to_vec()
+                    .iter()
+                    .chain(DnsQuestion::new()
+                        .to_bytes()
+                        .iter()
+                    )
+                    .collect();
+
                 udp_socket
-                    .send_to(&response, source)
+                    .send_to(, source)
                     .expect("Failed to send response");
             }
             Err(e) => {
