@@ -223,7 +223,7 @@ impl DnsAnswer {
             aclass: 1,
             ttl: 60,
             rdlength: 4,
-            rdata: vec![127, 0, 0, 1],
+            rdata: vec![8, 8, 8, 8],
         }
     }
 }
