@@ -85,7 +85,7 @@ impl DnsQuestion {
 
     fn new() -> Self {
         DnsQuestion{
-            name: "codecrafters.io".to_string(),
+            name: &b"\x0ccodecrafters\x02io\x00".to_string(),
             qtype: 1,
             qclass: 1,
         }
@@ -117,7 +117,7 @@ fn main() {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
                 let response = build_response(buf, size);
-                udp_socket.send_to(response.as_ref(), source).expect("Failed to send a response");
+                udp_socket.send_to( &response, source ).expect("Failed to send a response");
             }
             Err(e) => {
                 eprintln!("Error receiving data: {}", e);
@@ -127,15 +127,16 @@ fn main() {
     }
 }
 
-fn build_response(buf: [u8; 512], size: usize) -> BytesMut {
-    let mut response = BytesMut::with_capacity(512);
-    let header = DnsHeader::new();
-    for byte in header.to_bytes().iter() {
-        response.put_u8(*byte);
+fn build_response(buf: [u8; 512], size: usize) -> [u8; 512] {
+    let mut response: [u8; 512] = [0; 512];
+
+    let header = DnsHeader::new().to_bytes();
+    for i in 0..header.len() {
+        response[i] = header[i];
     }
-    let question = DnsQuestion::new();
-    for byte in question.to_bytes().iter() {
-        response.put_u8(*byte);
+    let question = DnsQuestion::new().to_bytes();
+    for j in 0..question.len() {
+        response[j + 12] = question[j];
     }
     response
 }
