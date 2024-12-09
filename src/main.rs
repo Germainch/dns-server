@@ -234,6 +234,15 @@ fn parse_request(buf: [u8; 512], size: usize) -> [u8; 512] {
     for i in 0..header.len() {
         response[i] = header[i];
     }
+    let question = DnsQuestion::new().to_bytes();
+    for j in 0..question.len() {
+        response[j + 12] = question[j];
+    }
+
+    let answer = DnsAnswer::new().to_bytes();
+    for k in 0..answer.len() {
+        response[k + 12 + question.len()] = answer[k];
+    }
     response
 }
 
