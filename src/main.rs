@@ -18,6 +18,11 @@ struct DnsHeader {
     nscount: u16,
     arcount: u16,
 }
+
+impl DnsHeader {
+
+}
+
 impl DnsHeader {
     fn new() -> Self {
         DnsHeader {
@@ -89,6 +94,23 @@ impl DnsHeader {
             arcount: 0,
         }
     }
+    fn from_buf(p0: &[u8; 512]) -> Self {
+        DnsHeader {
+            id: (p0[0] as u16) << 8 | p0[1] as u16,
+            qr: p0[2] >> 7,
+            opcode: (p0[2] >> 3) & 0x0F,
+            aa: (p0[2] >> 2) & 0x01,
+            tc: (p0[2] >> 1) & 0x01,
+            rd: p0[2] & 0x01,
+            ra: p0[3] >> 7,
+            z: (p0[3] >> 4) & 0x07,
+            rcode: p0[3] & 0x0F,
+            qdcount: (p0[4] as u16) << 8 | p0[5] as u16,
+            ancount: (p0[6] as u16) << 8 | p0[7] as u16,
+            nscount: (p0[8] as u16) << 8 | p0[9] as u16,
+            arcount: (p0[10] as u16) << 8 | p0[11] as u16,
+        }
+    }
 }
 
 
@@ -141,7 +163,6 @@ impl DnsAnswer {
             rdata: vec![127, 0, 0, 1],
         }
     }
-
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
         let name_bytes = self.name.as_slice();
@@ -174,7 +195,7 @@ fn main() {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
-                let response = build_response(buf, size);
+                let response = parse_request(buf, size);
                 udp_socket.send_to( &response, source ).expect("Failed to send a response");
             }
             Err(e) => {
@@ -207,8 +228,24 @@ fn build_response(_buf: [u8; 512], _size: usize) -> [u8; 512] {
     response
 }
 
+fn parse_request(buf: [u8; 512], size: usize) -> [u8; 512] {
+    let mut response: [u8; 512] = [0; 512];
+    let header = DnsHeader::from_buf(&buf).to_bytes();
+    for i in 0..header.len() {
+        response[i] = header[i];
+    }
+    response
+}
+
+
 #[test]
 fn test_dns_question(){
     let question = DnsQuestion::new();
     println!("{:?}", question.name);
+}
+
+#[test]
+fn test_dns_header(){
+    let header = DnsHeader::new();
+    println!("{:?}", header);
 }
