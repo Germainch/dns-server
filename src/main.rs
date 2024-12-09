@@ -111,25 +111,13 @@ fn main() {
     let udp_socket = UdpSocket::bind("127.0.0.1:2053").expect("Failed to bind to address");
     let mut buf = [0; 512];
 
-    BytesMut::new().put_bytes();
 
     loop {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
-                let response: Vec<&u8> = DnsHeader::new()
-                    .to_bytes()
-                    .to_vec()
-                    .iter()
-                    .chain(DnsQuestion::new()
-                        .to_bytes()
-                        .iter()
-                    )
-                    .collect();
-
-                udp_socket
-                    .send_to(, source)
-                    .expect("Failed to send response");
+                let response = build_response(buf, size);
+                udp_socket.send_to(response.as_ref(), source).expect("Failed to send a response");
             }
             Err(e) => {
                 eprintln!("Error receiving data: {}", e);
@@ -137,4 +125,17 @@ fn main() {
             }
         }
     }
+}
+
+fn build_response(buf: [u8; 512], size: usize) -> BytesMut {
+    let mut response = BytesMut::with_capacity(512);
+    let header = DnsHeader::new();
+    for byte in header.to_bytes().iter() {
+        response.put_u8(*byte);
+    }
+    let question = DnsQuestion::new();
+    for byte in question.to_bytes().iter() {
+        response.put_u8(*byte);
+    }
+    response
 }
