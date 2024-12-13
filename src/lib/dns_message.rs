@@ -46,7 +46,7 @@ impl DnsMessage {
 
         DnsMessage {
             header,
-            question: vec![question],
+            question: vec![question.clone()],
             answer: build_answer(&buf[(12+question.to_bytes().len())..]),
             authority,
             additionnal_space,
@@ -73,7 +73,7 @@ impl DnsMessage {
         }
 
         let q = self.question[0].to_bytes();
-        let a = self.answer[0].to_bytes();
+        let a = self.answer.to_bytes();
 
         // question section
         buffer[12..(12 + q.len())].copy_from_slice(&q);
