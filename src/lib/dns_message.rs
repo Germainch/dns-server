@@ -1,6 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr};
 use crate::lib::dns_answer::DnsAnswer;
-use crate::lib::dns_header::DnsHeader;
+use crate::lib::dns_header::{DnsHeader, QR};
 use crate::lib::dns_question::DnsQuestion;
 
 pub struct DnsMessage {
@@ -37,7 +37,8 @@ impl DnsMessage {
     }
 
     pub fn build_response(buf: &[u8;512]) -> Self{
-        let header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
+        let mut header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
+        header.set_qr(QR::RESPONSE);
         let question = DnsQuestion::new();
         let answer = DnsAnswer::new();
         let authority = IpAddr::from(Ipv4Addr::new(0, 0, 0, 0));

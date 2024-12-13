@@ -5,7 +5,7 @@ use std::ops::Shl;
 // --------------------- FLAGS STRUCTS ---------------------
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum QR {
+pub enum QR {
     QUERY = 0,
     RESPONSE = 1,
 }
@@ -13,7 +13,7 @@ enum QR {
 /// Operation Code:
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum OPCODE {
+pub enum OPCODE {
     QUERY = 0,
     IQUERY = 1,
     STATUS = 2,
@@ -28,7 +28,7 @@ enum OPCODE {
 ///
 #[repr(u8)]
 #[derive(Debug, PartialEq, Clone, Copy)]
-enum RCODE {
+pub enum RCODE {
     NOERROR = 0,  // No Error
     FORMERR = 1,  // Format Error
     SERVFAIL = 2, // Server Failure
@@ -99,7 +99,7 @@ impl TryFrom<u8> for RCODE {
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct DnsHeader {
     id: u16,
-    qr: QR,
+    pub(crate) qr: QR,
     opcode: OPCODE,
     aa: u8,
     tc: u8,
@@ -131,6 +131,11 @@ impl DnsHeader {
             arcount: 0,            // Additional Record Count
         }
     }
+
+    pub fn set_qr(&mut self, qr: QR) {
+        self.qr = qr;
+    }
+
     pub fn to_bytes(&self) -> [u8; 12] {
         let mut bytes = [0u8; 12];
 
