@@ -36,6 +36,22 @@ impl DnsMessage {
         }
     }
 
+    pub fn build_response(buf: &[u8;512]) -> Self{
+        let header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
+        let question = DnsQuestion::new();
+        let answer = DnsAnswer::new();
+        let authority = IpAddr::from(Ipv4Addr::new(0, 0, 0, 0));
+        let additionnal_space = 0;
+
+        DnsMessage {
+            header,
+            question: vec![question],
+            answer: vec![answer],
+            authority,
+            additionnal_space,
+        }
+    }
+
     pub fn new() -> Self {
         DnsMessage {
             header: DnsHeader::new(),

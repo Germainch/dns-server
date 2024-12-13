@@ -21,9 +21,9 @@ fn main() {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
-                let message = DnsMessage::from_bytes(&buf);
+                let message = DnsMessage::build_response(&buf);
 
-                let response = DnsMessage::new().to_bytes();
+                let response = message.to_bytes();
                 // todo function to process the message and return a response
                 // let response = process_message(&udp_socket, message, source);
                 udp_socket.send_to( &response, source ).expect("Failed to send a response");
