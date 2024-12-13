@@ -1,35 +1,42 @@
+use crate::lib::types::{Class, Type};
 
+#[allow(dead_code, unused)]
+
+
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct DnsAnswer {
-    name: Vec<u8>, // Domain name in labels
-    atype: u16,   // Answer Type 2-bytes integer
-    aclass: u16,  // Answer Class 2-bytes integer
-    ttl: u32,     // Time to Live 4-bytes integer
-    rdlength: u16, // Resource Data Length 2-bytes integer
+    pub(crate) name: Vec<u8>,  // Domain name in labels
+    atype: Type,   // Answer Type 2-bytes integer
+    aclass: Class, // Answer Class 2-bytes integer
+    ttl: u32,       // Time to Live 4-bytes integer
+    rdlength: u16,  // Resource Data Length 2-bytes integer
     rdata: Vec<u8>, // Resource Data
 }
 
-
-
 impl DnsAnswer {
-    fn new() -> Self {
+    pub(crate) fn new() -> Self {
         DnsAnswer {
             name: b"\x0ccodecrafters\x02io\x00".to_vec(),
-            atype: 1,
-            aclass: 1,
+            atype: Type::A,
+            aclass: Class::IN,
             ttl: 60,
             rdlength: 4,
             rdata: vec![127, 0, 0, 1],
         }
     }
 
-    fn to_bytes(&self) -> Vec<u8> {
+    pub(crate) fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        let name_bytes = self.name.as_slice();
-        name_bytes.iter().for_each(|byte| bytes.push(*byte));
-        bytes.push((self.atype >> 8) as u8);
-        bytes.push((self.atype & 0xFF) as u8);
-        bytes.push((self.aclass >> 8) as u8);
-        bytes.push((self.aclass & 0xFF) as u8);
+
+        for byte in self.name.iter() {
+            bytes.push(*byte);
+        }
+
+        bytes.push((self.atype as u16 >> 8) as u8);
+        bytes.push((self.atype as u16 & 0xFF) as u8);
+        bytes.push((self.aclass as u16 >> 8) as u8);
+        bytes.push((self.aclass as u16 & 0xFF) as u8);
         bytes.push((self.ttl >> 24) as u8);
         bytes.push((self.ttl >> 16) as u8);
         bytes.push((self.ttl >> 8) as u8);
@@ -40,30 +47,61 @@ impl DnsAnswer {
         rdata_bytes.iter().for_each(|byte| bytes.push(*byte));
         bytes
     }
-    fn from_buf(p0: &[u8; 512]) -> Self {
-        let mut i = 12;
-        while p0[i] != 0 {
-            let len = p0[i] as usize;
-            i += len + 1;
-        }
-        i += 5;
+
+    pub(crate) fn from_bytes(p0: &[u8]) -> Self {
+        let mut i = 0;
         let mut name = Vec::new();
+
         while p0[i] != 0 {
-            let len = p0[i] as usize;
-            for j in 0..len {
-                name.push(p0[i + j + 1]);
-            }
-            name.push(b'.');
-            i += len + 1;
+            name.push(p0[i]);
+            i += 1;
         }
-        name.pop();
+
+        // we push the last 0 byte and increment i
+        name.push(p0[i]);
+        i += 1;
+
+        let atype = Type::try_from((p0[i] as u16) << 8 | p0[i + 1] as u16).unwrap();
+        let aclass = Class::try_from((p0[i + 2] as u16) << 8 | p0[i + 3] as u16).unwrap();
+        let ttl = (p0[i + 4] as u32) << 24 | (p0[i + 5] as u32) << 16 | (p0[i + 6] as u32) << 8 | p0[i + 7] as u32;
+        let rdlength = (p0[i + 8] as u16) << 8 | p0[i + 9] as u16;
+        let mut rdata = Vec::new();
+        for j in 0..rdlength {
+            rdata.push(p0[i + 10 + j as usize]);
+        }
+
         DnsAnswer {
             name,
-            atype: 1,
-            aclass: 1,
-            ttl: 60,
-            rdlength: 4,
-            rdata: vec![8, 8, 8, 8],
+            atype,
+            aclass,
+            ttl,
+            rdlength,
+            rdata,
         }
     }
+}
+
+// --------------------- TESTS ---------------------
+
+#[test]
+fn test_answer() {
+    let answer = DnsAnswer::new();
+    println!("{:X?}", answer);
+    let bytes = answer.to_bytes();
+    println!("{:X?}", bytes);
+}
+
+#[test]
+fn test_serde_answer(){
+    let answer = DnsAnswer::new();
+    println!("answer: {:X?}", answer.name);
+
+    let copy = answer.clone();
+
+    let bytes = answer.to_bytes();
+    println!("bytes : {:X?}", bytes);
+    let reconstructed: DnsAnswer = DnsAnswer::from_bytes(&bytes);
+    println!("reconstructed : {:X?}", reconstructed.name);
+
+    assert_eq!(copy, reconstructed);
 }

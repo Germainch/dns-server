@@ -4,6 +4,7 @@ mod lib;
 use std::net::UdpSocket;
 use crate::lib::dns_answer::DnsAnswer;
 use crate::lib::dns_header::DnsHeader;
+use crate::lib::dns_message::DnsMessage;
 use crate::lib::dns_question::DnsQuestion;
 
 fn main() {
@@ -18,8 +19,12 @@ fn main() {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
+                let message = DnsMessage::from_bytes(&buf);
 
-                // udp_socket.send_to( &response, source ).expect("Failed to send a response");
+                let response = DnsMessage::new().to_bytes();
+                // todo function to process the message and return a response
+                // let response = process_message(&udp_socket, message, source);
+                udp_socket.send_to( &response, source ).expect("Failed to send a response");
             }
             Err(e) => {
                 eprintln!("Error receiving data: {}", e);
