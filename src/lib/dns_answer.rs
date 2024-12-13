@@ -14,12 +14,7 @@ impl DnsAnswer{
     }
 
     pub fn to_bytes(&self) -> Vec<u8>{
-        let mut bytes = Vec::new();
-        for rr in self.rrs.iter(){
-            let rr_bytes = rr.to_bytes();
-            rr_bytes.iter().for_each(|byte| bytes.push(*byte));
-        }
-        bytes
+        self.rrs.first().unwrap().to_bytes()
     }
 }
 
