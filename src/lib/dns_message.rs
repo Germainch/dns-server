@@ -6,7 +6,7 @@ use crate::lib::dns_question::DnsQuestion;
 #[derive(Debug)]
 pub struct DnsMessage {
     header: DnsHeader,
-    question: Vec<DnsQuestion>, // usually 0 or 1
+    question: DnsQuestion, // usually 0 or 1
     answer: DnsAnswer,     // usually 0 or 1
     authority : IpAddr,
     additionnal_space: usize,
@@ -21,7 +21,6 @@ impl DnsMessage {
         let answer = build_answer(&buf[(12 + question_len)..]);
         let answer_len = answer.to_bytes().len(); // 10 octets for atype, aclass, ttl, rdlength
 
-        let question_vec = vec![question];
         let auth_buf = &buf[(12 + question_len + answer_len)..];
         let authority = IpAddr::from(Ipv4Addr::new(auth_buf[0], auth_buf[1], auth_buf[2], auth_buf[3]));
         let authority_len = 4; // 4 octets for authority
@@ -29,7 +28,7 @@ impl DnsMessage {
 
         DnsMessage {
             header,
-            question: question_vec,
+            question,
             answer,
             authority,
             additionnal_space,
@@ -40,14 +39,14 @@ impl DnsMessage {
         let mut header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         header.set_qr(QR::RESPONSE);
         let question = DnsQuestion::new();
-        let answer = RR::new();
+        let answer = build_answer(&buf[(12+question.to_bytes().len())..]);
         let authority = IpAddr::from(Ipv4Addr::new(0, 0, 0, 0));
         let additionnal_space = 0;
 
         DnsMessage {
             header,
-            question: vec![question.clone()],
-            answer: build_answer(&buf[(12+question.to_bytes().len())..]),
+            question,
+            answer,
             authority,
             additionnal_space,
         }
@@ -56,7 +55,7 @@ impl DnsMessage {
     pub fn new() -> Self {
         DnsMessage {
             header: DnsHeader::new(),
-            question: vec![DnsQuestion::new()],
+            question: DnsQuestion::new(),
             answer: DnsAnswer::new(),
             authority: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
             additionnal_space: 0,
@@ -67,30 +66,19 @@ impl DnsMessage {
         let mut buffer: Vec<u8> = vec![0; 512];
 
         let mut bytes = self.header.to_bytes();
-
-        for i in 0..bytes.len() {
-            buffer[i] = (bytes[i] as u8);
-        }
-
-        let q = self.question[0].to_bytes();
+        let q = self.question.to_bytes();
         let a = self.answer.to_bytes();
+        let authority = self.authority.to_string()
+                                    .trim()
+                                    .split(".")
+                                    .map(|x| x.parse::<u8>().unwrap())
+                                    .collect::<Vec<u8>>();
 
-        // question section
-        buffer[12..(12 + q.len())].copy_from_slice(&q);
-
-        // answer section
-        buffer[(12 + q.len())..(12 + q.len() + a.len())].copy_from_slice(&a);
-
-        // authority section
-        buffer[(12 + q.len() + a.len())..(12 + q.len() + a.len() + 4)]
-            .copy_from_slice(&self.authority.to_string()
-                                            .trim()
-                                            .split(".")
-                                            .map(|x| x.parse::<u8>().unwrap())
-                                            .collect::<Vec<u8>>());
-        // additionnal space
-        buffer[(12 + q.len() + a.len() + 4)..512].fill(0);
-        <[u8; 512]>::try_from(buffer).unwrap()
+        let mut concat = [bytes.as_slice(), q.as_slice(), a.as_slice(), authority.as_slice()].concat();
+        let len = concat.len();
+        println!("{:?}", len);
+        concat[len..512].fill(0);
+        <[u8; 512]>::try_from(concat).unwrap()
     }
 }
 
