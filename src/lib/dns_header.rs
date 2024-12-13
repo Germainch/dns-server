@@ -1,4 +1,4 @@
-use crate::lib::dns_answer::DnsAnswer;
+use crate::lib::dns_answer::RR;
 use crate::lib::dns_question::DnsQuestion;
 use std::ops::Shl;
 

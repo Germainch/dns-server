@@ -2,10 +2,20 @@ use crate::lib::types::{Class, Type};
 
 #[allow(dead_code, unused)]
 
+pub struct DnsAnswer{
+    rrs:Vec<RR>
+}
 
+impl DnsAnswer{
+    pub fn new() -> Self{
+        DnsAnswer{
+            rrs: vec![RR::new()]
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct DnsAnswer {
+pub struct RR {
     pub(crate) name: Vec<u8>,  // Domain name in labels
     atype: Type,   // Answer Type 2-bytes integer
     aclass: Class, // Answer Class 2-bytes integer
@@ -14,9 +24,9 @@ pub struct DnsAnswer {
     rdata: Vec<u8>, // Resource Data
 }
 
-impl DnsAnswer {
+impl RR {
     pub(crate) fn new() -> Self {
-        DnsAnswer {
+        RR {
             name: b"\x0ccodecrafters\x02io\x00".to_vec(),
             atype: Type::A,
             aclass: Class::IN,
@@ -75,7 +85,7 @@ impl DnsAnswer {
             rdata.push(p0[i + 10 + j as usize]);
         }
 
-        DnsAnswer {
+        RR {
             name,
             atype,
             aclass,
@@ -90,7 +100,7 @@ impl DnsAnswer {
 
 #[test]
 fn test_answer() {
-    let answer = DnsAnswer::new();
+    let answer = RR::new();
     println!("{:X?}", answer);
     let bytes = answer.to_bytes();
     println!("{:X?}", bytes);
@@ -98,14 +108,14 @@ fn test_answer() {
 
 #[test]
 fn test_serde_answer(){
-    let answer = DnsAnswer::new();
+    let answer = RR::new();
     println!("answer: {:X?}", answer.name);
 
     let copy = answer.clone();
 
     let bytes = answer.to_bytes();
     println!("bytes : {:X?}", bytes);
-    let reconstructed: DnsAnswer = DnsAnswer::from_bytes(&bytes);
+    let reconstructed: RR = RR::from_bytes(&bytes);
     println!("reconstructed : {:X?}", reconstructed.name);
 
     assert_eq!(copy, reconstructed);

@@ -4,7 +4,7 @@ mod lib;
 #[allow(dead_code)]
 #[allow(unused_variables)]
 use std::net::UdpSocket;
-use crate::lib::dns_answer::DnsAnswer;
+use crate::lib::dns_answer::RR;
 use crate::lib::dns_header::DnsHeader;
 use crate::lib::dns_message::DnsMessage;
 use crate::lib::dns_question::DnsQuestion;

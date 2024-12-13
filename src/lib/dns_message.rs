@@ -1,5 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr};
-use crate::lib::dns_answer::DnsAnswer;
+use crate::lib::dns_answer::RR;
 use crate::lib::dns_header::{DnsHeader, QR};
 use crate::lib::dns_question::DnsQuestion;
 
@@ -7,7 +7,7 @@ use crate::lib::dns_question::DnsQuestion;
 pub struct DnsMessage {
     header: DnsHeader,
     question: Vec<DnsQuestion>, // usually 0 or 1
-    answer: Vec<DnsAnswer>,     // usually 0 or 1
+    answer: Vec<RR>,     // usually 0 or 1
     authority : IpAddr,
     additionnal_space: usize,
 }
@@ -18,7 +18,7 @@ impl DnsMessage {
         let header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         let question = DnsQuestion::from_bytes(&buf[12..]);
         let question_len = question.name.len() + 4; // 4 octets for qtype and qclass
-        let answer = DnsAnswer::from_bytes(&buf[(12 + question_len)..]);
+        let answer = RR::from_bytes(&buf[(12 + question_len)..]);
         let answer_len = answer.name.len() + 10; // 10 octets for atype, aclass, ttl, rdlength
 
         let question_vec = vec![question];
@@ -41,7 +41,7 @@ impl DnsMessage {
         let mut header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         header.set_qr(QR::RESPONSE);
         let question = DnsQuestion::new();
-        let answer = DnsAnswer::new();
+        let answer = RR::new();
         let authority = IpAddr::from(Ipv4Addr::new(0, 0, 0, 0));
         let additionnal_space = 0;
 
@@ -58,7 +58,7 @@ impl DnsMessage {
         DnsMessage {
             header: DnsHeader::new(),
             question: vec![DnsQuestion::new()],
-            answer: vec![DnsAnswer::new()],
+            answer: vec![RR::new()],
             authority: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
             additionnal_space: 0,
         }
