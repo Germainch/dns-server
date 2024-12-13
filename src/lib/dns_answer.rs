@@ -25,7 +25,7 @@ pub struct RR {
     aclass: Class, // Answer Class 2-bytes integer
     ttl: u32,       // Time to Live 4-bytes integer
     rdlength: u16,  // Resource Data Length 2-bytes integer
-    rdata: Vec<u8>, // Resource Data
+    rdata: u32, // Resource Data
 }
 
 impl RR {
@@ -36,7 +36,7 @@ impl RR {
             aclass: Class::IN,
             ttl: 60,
             rdlength: 4,
-            rdata: vec![127, 0, 0, 1],
+            rdata: 0x7F000001,
         }
     }
 
@@ -57,8 +57,9 @@ impl RR {
         bytes.push((self.ttl & 0xFF) as u8);
         bytes.push((self.rdlength >> 8) as u8);
         bytes.push((self.rdlength & 0xFF) as u8);
-        let rdata_bytes = self.rdata.as_slice();
-        rdata_bytes.iter().for_each(|byte| bytes.push(*byte));
+        for byte in self.rdata.to_be_bytes().iter() {
+            bytes.push(*byte);
+        }
         bytes
     }
 
@@ -86,10 +87,7 @@ impl RR {
         let aclass = Class::try_from((p0[i + 2] as u16) << 8 | p0[i + 3] as u16).unwrap();
         let ttl = (p0[i + 4] as u32) << 24 | (p0[i + 5] as u32) << 16 | (p0[i + 6] as u32) << 8 | p0[i + 7] as u32;
         let rdlength = (p0[i + 8] as u16) << 8 | p0[i + 9] as u16;
-        let mut rdata = Vec::new();
-        for j in 0..rdlength {
-            rdata.push(p0[i + 10 + j as usize]);
-        }
+        let rdata = (p0[i + 10] as u32) << 24 | (p0[i + 11] as u32) << 16 | (p0[i + 12] as u32) << 8 | p0[i + 13] as u32;
 
         RR {
             name,
@@ -131,7 +129,7 @@ impl RR {
         self.rdlength = rdlength;
     }
 
-    pub fn set_rdata(&mut self, rdata: Vec<u8>){
+    pub fn set_rdata(&mut self, rdata: u32){
         self.rdata = rdata;
     }
 }
@@ -142,7 +140,6 @@ pub fn build_answer(buf: &[u8]) -> DnsAnswer {
     rr.set_class(Class::IN);
     rr.set_ttl(60);
     rr.set_rdlength(4);
-    rr.set_rdata(vec![127, 0, 0, 1]);
     DnsAnswer {
         rrs: vec![rr],
     }

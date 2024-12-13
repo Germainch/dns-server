@@ -171,6 +171,7 @@ impl DnsHeader {
 
         bytes
     }
+
     pub fn from_bytes(data: &[u8; 12]) -> Self {
         let qr = match QR::try_from(data[2] >> 7) {
             Ok(qr) => qr,
