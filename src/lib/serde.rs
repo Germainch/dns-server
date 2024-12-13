@@ -1,4 +1,6 @@
-trait Serde {
-    fn serialize(&self) -> String;
-    fn deserialize(s: String) -> Self;
+use bytes::Bytes;
+
+pub(crate) trait DNSSerialization {
+    fn serialize(&self) -> Bytes;
+    fn deserialize(s: Bytes) -> Self;
 }

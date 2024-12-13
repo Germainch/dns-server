@@ -1,5 +1,7 @@
-use crate::lib::dns_answer::RR;
+use crate::lib::record::RR;
 use crate::lib::dns_question::DnsQuestion;
+use crate::lib::serde::DNSSerialization;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::ops::Shl;
 
 // --------------------- FLAGS STRUCTS ---------------------
@@ -98,19 +100,19 @@ impl TryFrom<u8> for RCODE {
 // --------------------- DNS HEADER ---------------------
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct DnsHeader {
-    id: u16,
+    pub(crate) id: u16,
     pub(crate) qr: QR,
-    opcode: OPCODE,
-    aa: u8,
-    tc: u8,
-    rd: u8,
-    ra: u8,
-    z: u8,
-    rcode: RCODE,
-    qdcount: u16,
-    ancount: u16,
-    nscount: u16,
-    arcount: u16,
+    pub(crate) opcode: OPCODE,
+    pub(crate) aa: u8,
+    pub(crate) tc: u8,
+    pub(crate) rd: u8,
+    pub(crate) ra: u8,
+    pub(crate) z: u8,
+    pub(crate) rcode: RCODE,
+    pub(crate) qdcount: u16,
+    pub(crate) ancount: u16,
+    pub(crate) nscount: u16,
+    pub(crate) arcount: u16,
 }
 
 impl DnsHeader {
@@ -135,93 +137,67 @@ impl DnsHeader {
     pub fn set_qr(&mut self, qr: QR) {
         self.qr = qr;
     }
+}
 
-    pub fn to_bytes(&self) -> [u8; 12] {
-        let mut bytes = [0u8; 12];
+impl DNSSerialization for DnsHeader {
+    fn serialize(&self) -> Bytes {
+        let mut bytes = BytesMut::from(vec![0u8; 12].as_slice());
+        bytes.put_u16(self.id);
+        bytes.put_u8(
+            ((self.qr as u8) << 7)
+                | ((self.opcode as u8) << 3)
+                | (self.aa << 2)
+                | (self.tc << 1)
+                | (self.rd << 0),
+        );
 
-        // Packet Identifier (ID)
-        bytes[0] = (self.id >> 8) as u8;
-        bytes[1] = (self.id & 0xFF) as u8;
+        bytes.put_u16(self.qdcount);
+        bytes.put_u16(self.ancount);
+        bytes.put_u16(self.nscount);
+        bytes.put_u16(self.arcount);
 
-        // Flags (QR, OPCODE, AA, TC, RD)
-        bytes[2] = ((self.qr as u8) << 7)
-            | ((self.opcode as u8 & 0xF) << 3)
-            | ((self.aa & 0x1) << 2)
-            | ((self.tc & 0x1) << 1)
-            | (self.rd & 0x1);
-
-        // Flags (RA, Z, RCODE)
-        bytes[3] = (self.ra << 7) | ((self.z & 0x7) << 4) | (self.rcode as u8 & 0xF);
-
-        // Question Count (QDCOUNT)
-        bytes[4] = (self.qdcount >> 8) as u8;
-        bytes[5] = (self.qdcount & 0xFF) as u8;
-
-        // Answer Record Count (ANCOUNT)
-        bytes[6] = (self.ancount >> 8) as u8;
-        bytes[7] = (self.ancount & 0xFF) as u8;
-
-        // Authority Record Count (NSCOUNT)
-        bytes[8] = (self.nscount >> 8) as u8;
-        bytes[9] = (self.nscount & 0xFF) as u8;
-
-        // Additional Record Count (ARCOUNT)
-        bytes[10] = (self.arcount >> 8) as u8;
-        bytes[11] = (self.arcount & 0xFF) as u8;
-
-        bytes
+        Bytes::from(bytes)
     }
 
-    pub fn from_bytes(data: &[u8; 12]) -> Self {
-        let qr = match QR::try_from(data[2] >> 7) {
-            Ok(qr) => qr,
-            Err(e) => panic!("Invalid QR"),
-        };
+    fn deserialize(mut s: Bytes) -> Self {
 
-        let opcode = OPCODE::try_from((data[2] >> 3) & 0xF).unwrap_or_else(|e| OPCODE::UNASSIGNED);
 
-        let rcode = RCODE::try_from((data[3] >> 2) & 0xF).unwrap_or_else(|e| RCODE::FORMERR);
+        let id = s.get_u16();
+        let a = s.get_u8();
+        println!("a: {:?}", a);
+        let b = s.get_u8();
+        println!("b: {:?}", b);
+
+        let qr = QR::try_from(a >> 7).unwrap();
+        let opcode = OPCODE::try_from((a >> 3) & 0x0F).unwrap();
+        let aa = (a >> 3) & 0x01;
+        let tc = (a >> 2) & 0x02;
+        let rd = (a >> 1) & 0x01;
+        let ra = b >> 7;
+        let z = b >> 4 & 0x07;
+        let rcode = RCODE::try_from((b >> 2) & 0xF).unwrap();
+
+        let qdcount = s.get_u16();
+        let ancount = s.get_u16();
+        let nscount = s.get_u16();
+        let arcount = s.get_u16();
 
         DnsHeader {
-            id: (((data[0] as u16) << 8) | (data[1] as u16 & 0xFF)) as u16,
+            id,
             qr,
             opcode,
-            aa: (data[2] >> 3) & 0x01,
-            tc: (data[2] >> 2) & 0x02,
-            rd: (data[2] >> 1) & 0x01,
-            ra: data[3] >> 7,
-            z: data[3] >> 4 & 0x07,
+            aa,
+            tc,
+            rd,
+            ra,
+            z,
             rcode,
-            qdcount: (data[4] as u16) << 8 | data[5] as u16,
-            ancount: (data[6] as u16) << 8 | data[7] as u16,
-            nscount: (data[8] as u16) << 8 | data[9] as u16,
-            arcount: (data[10] as u16) << 8 | data[11] as u16,
+            qdcount,
+            ancount,
+            nscount,
+            arcount,
         }
     }
 }
 
-
-
-// --------------------- TESTS ---------------------
-#[test]
-fn test_header() {
-    let header = DnsHeader::new();
-    println!("{:X?}", header);
-    let bytes = header.to_bytes();
-    println!("{:X?}", bytes);
-}
-
-#[test]
-fn test_header_serde() {
-    let header = DnsHeader::new();
-    println!("header: {:X?}", header);
-
-    let copy = header.clone();
-
-    let bytes = header.to_bytes();
-    let reconstructed: DnsHeader = DnsHeader::from_bytes(&bytes);
-    println!("bytes : {:X?}", bytes);
-    println!("reconstructed : {:X?}", reconstructed);
-
-    assert_eq!(header, reconstructed);
-}
+// --------------------- TESTS --------------------
