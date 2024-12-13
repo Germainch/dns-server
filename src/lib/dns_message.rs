@@ -7,7 +7,7 @@ use crate::lib::dns_question::DnsQuestion;
 pub struct DnsMessage {
     header: DnsHeader,
     question: DnsQuestion, // usually 0 or 1
-    answer: DnsAnswer,     // usually 0 or 1
+    answer: RR,     // usually 0 or 1
     authority : IpAddr,
     additionnal_space: usize,
 }
@@ -18,8 +18,9 @@ impl DnsMessage {
         let header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         let question = DnsQuestion::from_bytes(&buf[12..]);
         let question_len = question.name.len() + 4; // 4 octets for qtype and qclass
-        let answer = build_answer(&buf[(12 + question_len)..]);
-        let answer_len = answer.to_bytes().len(); // 10 octets for atype, aclass, ttl, rdlength
+
+        let answer = RR::from_bytes(&buf[(12 + question_len)..]);
+        let answer_len = answer.name.len() + 10; // 10 octets for the rest of the answer
 
         let auth_buf = &buf[(12 + question_len + answer_len)..];
         let authority = IpAddr::from(Ipv4Addr::new(auth_buf[0], auth_buf[1], auth_buf[2], auth_buf[3]));
@@ -39,7 +40,7 @@ impl DnsMessage {
         let mut header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         header.set_qr(QR::RESPONSE);
         let question = DnsQuestion::new();
-        let answer = build_answer(&buf[(12+question.to_bytes().len())..]);
+        let answer = RR::from_bytes(&buf[12..]);
         let authority = IpAddr::from(Ipv4Addr::new(0, 0, 0, 0));
         let additionnal_space = 0;
 
@@ -56,7 +57,7 @@ impl DnsMessage {
         DnsMessage {
             header: DnsHeader::new(),
             question: DnsQuestion::new(),
-            answer: DnsAnswer::new(),
+            answer: RR::new(),
             authority: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
             additionnal_space: 0,
         }
