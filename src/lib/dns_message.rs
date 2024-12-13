@@ -77,7 +77,11 @@ impl DnsMessage {
         let mut concat = [bytes.as_slice(), q.as_slice(), a.as_slice(), authority.as_slice()].concat();
         let len = concat.len();
         println!("{:?}", len);
-        concat[len..512].fill(0);
+
+        // fill the rest of the buffer with 0s
+        for i in len..512{
+            concat.push(0);
+        }
         <[u8; 512]>::try_from(concat).unwrap()
     }
 }
