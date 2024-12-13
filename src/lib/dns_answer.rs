@@ -1,7 +1,7 @@
 use crate::lib::types::{Class, Type};
 
 #[allow(dead_code, unused)]
-
+#[derive(Debug)]
 pub struct DnsAnswer{
     rrs:Vec<RR>
 }
@@ -11,6 +11,15 @@ impl DnsAnswer{
         DnsAnswer{
             rrs: vec![RR::new()]
         }
+    }
+
+    pub fn to_bytes(&self) -> Vec<u8>{
+        let mut bytes = Vec::new();
+        for rr in self.rrs.iter(){
+            let rr_bytes = rr.to_bytes();
+            rr_bytes.iter().for_each(|byte| bytes.push(*byte));
+        }
+        bytes
     }
 }
 
@@ -95,6 +104,52 @@ impl RR {
             rdlength,
             rdata,
         }
+    }
+
+
+
+    pub fn set_name(&mut self, buf: &[u8] ){
+        let mut i = 0;
+        let mut name = Vec::new();
+        while buf[i] != 0 {
+            name.push(buf[i]);
+            i += 1;
+        }
+        name.push(buf[i]);
+        i += 1;
+        self.name = String::from_utf8(name).unwrap();
+    }
+
+    pub fn set_type(&mut self, atype: Type){
+        self.atype = atype;
+    }
+
+    pub fn set_class(&mut self, aclass: Class){
+        self.aclass = aclass;
+    }
+
+    pub fn set_ttl(&mut self, ttl: u32){
+        self.ttl = ttl;
+    }
+
+    pub fn set_rdlength(&mut self, rdlength: u16){
+        self.rdlength = rdlength;
+    }
+
+    pub fn set_rdata(&mut self, rdata: Vec<u8>){
+        self.rdata = rdata;
+    }
+}
+
+pub fn build_answer(buf: &[u8]) -> DnsAnswer {
+    let mut rr = RR::from_bytes(&buf);
+    rr.set_type(Type::A);
+    rr.set_class(Class::IN);
+    rr.set_ttl(60);
+    rr.set_rdlength(4);
+    rr.set_rdata(vec![127, 0, 0, 1]);
+    DnsAnswer {
+        rrs: vec![rr],
     }
 }
 

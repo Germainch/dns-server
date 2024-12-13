@@ -1,5 +1,5 @@
 use std::net::{IpAddr, Ipv4Addr};
-use crate::lib::dns_answer::RR;
+use crate::lib::dns_answer::{build_answer, DnsAnswer, RR};
 use crate::lib::dns_header::{DnsHeader, QR};
 use crate::lib::dns_question::DnsQuestion;
 
@@ -7,7 +7,7 @@ use crate::lib::dns_question::DnsQuestion;
 pub struct DnsMessage {
     header: DnsHeader,
     question: Vec<DnsQuestion>, // usually 0 or 1
-    answer: Vec<RR>,     // usually 0 or 1
+    answer: DnsAnswer,     // usually 0 or 1
     authority : IpAddr,
     additionnal_space: usize,
 }
@@ -18,12 +18,11 @@ impl DnsMessage {
         let header = DnsHeader::from_bytes(buf[0..12].try_into().unwrap());
         let question = DnsQuestion::from_bytes(&buf[12..]);
         let question_len = question.name.len() + 4; // 4 octets for qtype and qclass
-        let answer = RR::from_bytes(&buf[(12 + question_len)..]);
-        let answer_len = answer.name.len() + 10; // 10 octets for atype, aclass, ttl, rdlength
+        let answer = build_answer(&buf[(12 + question_len)..]);
+        let answer_len = answer.to_bytes().len(); // 10 octets for atype, aclass, ttl, rdlength
 
         let question_vec = vec![question];
-        let answer_vec = vec![answer.clone()];
-        let auth_buf = &buf[(12 + question_len + answer.name.len() + 10)..];
+        let auth_buf = &buf[(12 + question_len + answer_len)..];
         let authority = IpAddr::from(Ipv4Addr::new(auth_buf[0], auth_buf[1], auth_buf[2], auth_buf[3]));
         let authority_len = 4; // 4 octets for authority
         let additionnal_space = buf.len() - (12 + question_len + answer_len + authority_len);
@@ -31,7 +30,7 @@ impl DnsMessage {
         DnsMessage {
             header,
             question: question_vec,
-            answer: answer_vec,
+            answer,
             authority,
             additionnal_space,
         }
@@ -48,7 +47,7 @@ impl DnsMessage {
         DnsMessage {
             header,
             question: vec![question],
-            answer: vec![answer],
+            answer: build_answer(&buf[(12+question.to_bytes().len())..]),
             authority,
             additionnal_space,
         }
@@ -58,7 +57,7 @@ impl DnsMessage {
         DnsMessage {
             header: DnsHeader::new(),
             question: vec![DnsQuestion::new()],
-            answer: vec![RR::new()],
+            answer: DnsAnswer::new(),
             authority: IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
             additionnal_space: 0,
         }
