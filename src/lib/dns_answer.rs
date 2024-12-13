@@ -16,7 +16,7 @@ impl DnsAnswer{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RR {
-    pub(crate) name: Vec<u8>,  // Domain name in labels
+    pub(crate) name: String,  // Domain name in labels
     atype: Type,   // Answer Type 2-bytes integer
     aclass: Class, // Answer Class 2-bytes integer
     ttl: u32,       // Time to Live 4-bytes integer
@@ -27,7 +27,7 @@ pub struct RR {
 impl RR {
     pub(crate) fn new() -> Self {
         RR {
-            name: b"\x0ccodecrafters\x02io\x00".to_vec(),
+            name: "codecrafters.io".parse().unwrap(),
             atype: Type::A,
             aclass: Class::IN,
             ttl: 60,
@@ -39,7 +39,7 @@ impl RR {
     pub(crate) fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
-        for byte in self.name.iter() {
+        for byte in  self.name.as_bytes() {
             bytes.push(*byte);
         }
 
@@ -75,6 +75,8 @@ impl RR {
         // we push the last 0 byte and increment i
         name.push(p0[i]);
         i += 1;
+
+        let name = String::from_utf8(name).unwrap();
 
         let atype = Type::try_from((p0[i] as u16) << 8 | p0[i + 1] as u16).unwrap();
         let aclass = Class::try_from((p0[i + 2] as u16) << 8 | p0[i + 3] as u16).unwrap();
