@@ -22,10 +22,8 @@ fn main() {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
                 let message = DnsMessage::build_response(&buf);
-
+                println!("{:?}", message);
                 let response = message.to_bytes();
-                // todo function to process the message and return a response
-                // let response = process_message(&udp_socket, message, source);
                 udp_socket.send_to( &response, source ).expect("Failed to send a response");
             }
             Err(e) => {

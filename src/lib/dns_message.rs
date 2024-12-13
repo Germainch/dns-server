@@ -3,6 +3,7 @@ use crate::lib::dns_answer::DnsAnswer;
 use crate::lib::dns_header::{DnsHeader, QR};
 use crate::lib::dns_question::DnsQuestion;
 
+#[derive(Debug)]
 pub struct DnsMessage {
     header: DnsHeader,
     question: Vec<DnsQuestion>, // usually 0 or 1
