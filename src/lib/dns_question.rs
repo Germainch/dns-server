@@ -33,6 +33,11 @@ impl DnsQuestion {
     }
 
     pub fn from_bytes(p0: &[u8]) -> Self {
+
+        if p0.len() < 5 || p0[0] == 0 {
+            return Self::new();
+        }
+
         let mut i = 0;
         let mut name = Vec::new();
         while p0[i] != 0 {
@@ -42,7 +47,9 @@ impl DnsQuestion {
         name.push(p0[i]);
         i += 1;
 
-        let qtype = Type::try_from((p0[i + 1] as u16) | (p0[i] as u16) << 8).unwrap();
+        println!("name: {:?}", name);
+
+        let qtype = Type::try_from((p0[i] as u16) << 8 | (p0[i + 1] as u16) ).unwrap();
         let qclass = Class::try_from((p0[i + 3] as u16) | (p0[i + 2] as u16) << 8).unwrap();
 
 

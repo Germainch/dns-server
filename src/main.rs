@@ -1,6 +1,8 @@
 mod lib;
 
 #[allow(unused_imports)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
 use std::net::UdpSocket;
 use crate::lib::dns_answer::DnsAnswer;
 use crate::lib::dns_header::DnsHeader;
