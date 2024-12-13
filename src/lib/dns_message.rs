@@ -49,18 +49,6 @@ impl DNSSerialization for DnsMessage {
     }
     fn deserialize(mut s: Bytes) -> Self {
 
-        match s.len() {
-            0 => return DnsMessage::new(),
-            12 => return DnsMessage {
-                header: DnsHeader::deserialize(s.clone()),
-                question: DnsQuestion::new(),
-                answer: RR::new(),
-                authority: IpAddr::from(Ipv4Addr::new(127, 0, 0, 1)),
-                additionnal_space: 0,
-            },
-            _ => {}
-        }
-
         let header = DnsHeader::deserialize(s.split_to(12));
         let question = DnsQuestion::deserialize(s.clone());
         let answer = RR::deserialize(s.split_to(12 + question.name.to_vec().len() + 4));

@@ -161,15 +161,30 @@ impl DNSSerialization for DnsHeader {
 
     fn deserialize(mut s: Bytes) -> Self {
 
+        if s.remaining() < 12 {
+            return Self::new();
+        }
 
         let id = s.get_u16();
         let a = s.get_u8();
-        println!("a: {:?}", a);
         let b = s.get_u8();
-        println!("b: {:?}", b);
 
-        let qr = QR::try_from(a >> 7).unwrap();
-        let opcode = OPCODE::try_from((a >> 3) & 0x0F).unwrap();
+        let mut qr = QR::RESPONSE;
+        if let Ok(res) = QR::try_from(a >> 7){
+            qr = res;
+        }
+        else {
+            return Self::new();
+        }
+
+        let mut opcode = OPCODE::QUERY;
+        if let Ok(res) = OPCODE::try_from((a >> 3) & 0x0F){
+            opcode = res;
+        }
+        else {
+            return Self::new();
+        }
+
         let aa = (a >> 3) & 0x01;
         let tc = (a >> 2) & 0x02;
         let rd = (a >> 1) & 0x01;

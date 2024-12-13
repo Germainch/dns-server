@@ -91,7 +91,10 @@ impl DNSSerialization for RR {
 
         rr.name = name;
 
-        rr.atype = Type::try_from(s.get_u16()).unwrap();
+        rr.atype = match Type::try_from(s.get_u16()){
+            Ok(t) => {t}
+            Err(_) => {return Self::new();}
+        }
         rr.aclass = Class::try_from(s.get_u16()).unwrap();
         rr.ttl = s.get_u32();
         rr.rdlength = s.get_u16();

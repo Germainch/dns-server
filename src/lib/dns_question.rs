@@ -42,8 +42,21 @@ impl DNSSerialization for DnsQuestion {
             name.push(b as char);
         }
 
-        let qtype = Type::try_from(s.get_u16()).unwrap();
-        let qclass = Class::try_from(s.get_u16()).unwrap();
+        let mut qtype = Type::A;
+        if let Ok(res) = Type::try_from(s.get_u16()){
+            qtype = res;
+        }
+        else {
+            return Self::new();
+        };
+
+        let mut qclass = Class::IN;
+        if let Ok(res) = Class::try_from(s.get_u16()){
+            qclass = res;
+        }
+        else {
+            return Self::new();
+        }
 
         DnsQuestion {
             name: name.into_bytes(),
