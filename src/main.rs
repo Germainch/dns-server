@@ -26,11 +26,11 @@ fn main() {
 
                 let mut message = DnsMessage::deserialize(&mut bytes);
 
-                print!("received");
+
                 let response = message.serialize();
                 let msg = response.iter().as_slice();
 
-                print!("sending");
+
                 udp_socket
                     .send_to(msg, source)
                     .expect("Failed to send a response");

@@ -24,38 +24,6 @@ impl RR {
             rdata: 0x7F000001,
         }
     }
-
-    pub fn set_name(&mut self, buf: &[u8]) {
-        let mut i = 0;
-        let mut name = Vec::new();
-        while buf[i] != 0 {
-            name.push(buf[i]);
-            i += 1;
-        }
-        name.push(buf[i]);
-        i += 1;
-        self.name = String::from_utf8(name).unwrap();
-    }
-
-    pub fn set_type(&mut self, atype: Type) {
-        self.atype = atype;
-    }
-
-    pub fn set_class(&mut self, aclass: Class) {
-        self.aclass = aclass;
-    }
-
-    pub fn set_ttl(&mut self, ttl: u32) {
-        self.ttl = ttl;
-    }
-
-    pub fn set_rdlength(&mut self, rdlength: u16) {
-        self.rdlength = rdlength;
-    }
-
-    pub fn set_rdata(&mut self, rdata: u32) {
-        self.rdata = rdata;
-    }
 }
 
 impl DNSSerialization for RR {
@@ -87,6 +55,7 @@ impl DNSSerialization for RR {
         let mut b = s.get_u8();
         while b != 0 {
             name.push(b as char);
+            b = s.get_u8();
         }
 
         rr.name = name;
