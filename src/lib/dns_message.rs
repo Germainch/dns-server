@@ -48,6 +48,7 @@ impl DNSSerialization for DnsMessage {
         Bytes::from(bytes)
     }
     fn deserialize(s: &mut Bytes) -> Self {
+        println!("{:?}", s);
 
         let header = DnsHeader::deserialize(s);
         let question = DnsQuestion::deserialize(s);

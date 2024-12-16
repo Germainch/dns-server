@@ -25,9 +25,8 @@ fn main() {
                 let mut bytes = Bytes::from(buf.to_vec());
 
                 let mut message = DnsMessage::deserialize(&mut bytes);
-                message.header.ancount = 1;
-                message.header.qr = QR::RESPONSE;
-                message.answer = RR::new();
+
+                print!("received");
                 let response = message.serialize();
                 let msg = response.iter().as_slice();
 

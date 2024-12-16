@@ -43,6 +43,7 @@ impl DNSSerialization for DnsQuestion {
         let mut b = s.get_u8();
         while b != 0 {
             name.push(b as char);
+            b = s.get_u8();
         }
 
         DnsQuestion {
