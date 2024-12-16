@@ -44,6 +44,7 @@ impl DNSSerialization for RR {
 
         Bytes::from(bytes)
     }
+
     fn deserialize(mut s: &mut Bytes) -> Self {
         let mut rr = RR::new();
 

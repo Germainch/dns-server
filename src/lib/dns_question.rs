@@ -46,6 +46,9 @@ impl DNSSerialization for DnsQuestion {
             b = s.get_u8();
         }
 
+        let qtype = Type::try_from(((s.get_u8() as u16) << 8) | s.get_u8() as u16);
+        let qclass = Class::try_from(((s.get_u8() as u16) << 8) | s.get_u8() as u16);
+
         DnsQuestion {
             name:   name.into_bytes(),
             qtype:  Type::A,
