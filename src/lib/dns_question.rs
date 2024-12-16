@@ -35,7 +35,7 @@ impl DNSSerialization for DnsQuestion {
         Bytes::from(bytes)
     }
     fn deserialize(s: &mut Bytes) -> Option<Self> {
-        if !s.has_remaining() {
+        if !s.has_remaining() || s.iter().peekable().peek().is_some_and(|b| **b == 0) {
             return None;
         }
 
