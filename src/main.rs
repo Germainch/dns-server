@@ -1,7 +1,7 @@
 mod lib;
 
 use crate::lib::record::RR;
-use crate::lib::dns_header::DnsHeader;
+use crate::lib::dns_header::{DnsHeader, QR};
 use crate::lib::dns_message::DnsMessage;
 use crate::lib::dns_question::DnsQuestion;
 #[allow(unused_imports)]
@@ -24,7 +24,10 @@ fn main() {
                 println!("Received {} bytes from {}", size, source);
                 let bytes = Bytes::from(buf.to_vec());
                 println!("Received bytes: {:X?}", bytes);
-                let message = DnsMessage::deserialize(bytes);
+                let mut message = DnsMessage::deserialize(bytes);
+                message.header.ancount = 1;
+                message.header.qr = QR::RESPONSE;
+                message.answer = RR::new();
                 let response = message.serialize();
 
                 udp_socket
