@@ -169,21 +169,16 @@ impl DNSSerialization for DnsHeader {
         let a = s.get_u8();
         let b = s.get_u8();
 
-        let mut qr = QR::RESPONSE;
-        if let Ok(res) = QR::try_from(a >> 7){
-            qr = res;
-        }
-        else {
-            return Self::new();
-        }
 
-        let mut opcode = OPCODE::QUERY;
-        if let Ok(res) = OPCODE::try_from((a >> 3) & 0x0F){
-            opcode = res;
-        }
-        else {
-            return Self::new();
-        }
+        let qr = match QR::try_from(a >> 7){
+            Ok(res) => res,
+            Err(_) => return Self::new(),
+        };
+
+        let opcode = match OPCODE::try_from((a >> 3) & 0x0F){
+            Ok(res) => res,
+            Err(_) => return Self::new(),
+        };
 
         let aa = (a >> 3) & 0x01;
         let tc = (a >> 2) & 0x02;

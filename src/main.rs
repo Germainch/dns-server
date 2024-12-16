@@ -26,6 +26,7 @@ fn main() {
 
                 let mut message = DnsMessage::deserialize(&mut bytes);
 
+                println!("{:?}", message.header);
 
                 let response = message.serialize();
                 let msg = response.iter().as_slice();
