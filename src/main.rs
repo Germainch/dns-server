@@ -23,15 +23,17 @@ fn main() {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
                 let bytes = Bytes::from(buf.to_vec());
-                println!("Received bytes: {:X?}", bytes);
+
                 let mut message = DnsMessage::deserialize(bytes);
                 message.header.ancount = 1;
                 message.header.qr = QR::RESPONSE;
                 message.answer = RR::new();
                 let response = message.serialize();
+                let msg = response.iter().as_slice();
 
+                print!("sending");
                 udp_socket
-                    .send_to(response.to_vec().as_slice(), source)
+                    .send_to(msg, source)
                     .expect("Failed to send a response");
             }
             Err(e) => {
