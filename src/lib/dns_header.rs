@@ -159,7 +159,7 @@ impl DNSSerialization for DnsHeader {
         Bytes::from(bytes)
     }
 
-    fn deserialize(mut s: Bytes) -> Self {
+    fn deserialize(s: &mut Bytes) -> Self {
 
         if s.remaining() < 12 {
             return Self::new();
