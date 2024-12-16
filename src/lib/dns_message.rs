@@ -47,11 +47,11 @@ impl DNSSerialization for DnsMessage {
 
         Bytes::from(bytes)
     }
-    fn deserialize(mut s: &mut Bytes) -> Self {
+    fn deserialize(s: &mut Bytes) -> Self {
 
-        let header = DnsHeader::deserialize(&mut s);
-        let question = DnsQuestion::deserialize(&mut s);
-        let answer = RR::deserialize(&mut s);
+        let header = DnsHeader::deserialize(s);
+        let question = DnsQuestion::deserialize(s);
+        let answer = RR::deserialize(s);
         let authority = IpAddr::from(Ipv4Addr::new(
             s.get_u8(),
             s.get_u8(),

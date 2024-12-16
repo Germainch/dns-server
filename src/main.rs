@@ -22,9 +22,9 @@ fn main() {
         match udp_socket.recv_from(&mut buf) {
             Ok((size, source)) => {
                 println!("Received {} bytes from {}", size, source);
-                let bytes = Bytes::from(buf.to_vec());
+                let mut bytes = Bytes::from(buf.to_vec());
 
-                let mut message = DnsMessage::deserialize(bytes);
+                let mut message = DnsMessage::deserialize(&mut bytes);
                 message.header.ancount = 1;
                 message.header.qr = QR::RESPONSE;
                 message.answer = RR::new();
