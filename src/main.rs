@@ -31,7 +31,7 @@ fn main() {
                 let response = message.serialize();
 
                 udp_socket
-                    .send_to(&response, source)
+                    .send_to(response.to_vec().as_slice(), source)
                     .expect("Failed to send a response");
             }
             Err(e) => {
