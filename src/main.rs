@@ -32,11 +32,6 @@ fn main() {
                     }
                 };
 
-                println!("{:?}", message.header);
-                println!("{:?}", message.question);
-                println!("{:?}", message.answer);
-                println!("{:?}", message.authority);
-
                 let response = message.serialize();
                 let msg = response.iter().as_slice();
 
