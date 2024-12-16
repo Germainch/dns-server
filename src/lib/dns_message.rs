@@ -31,8 +31,15 @@ impl DNSSerialization for DnsMessage {
     fn serialize(&self) -> Bytes {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.header.serialize());
-        bytes.extend_from_slice(&self.question[0].serialize());
-        bytes.extend_from_slice(&self.answer[0].serialize());
+
+        if self.question.len() > 0 {
+            bytes.extend_from_slice(&self.question[0].serialize());
+        }
+
+        if self.answer.len() > 0 {
+            bytes.extend_from_slice(&self.answer[0].serialize());
+        }
+
         bytes.extend_from_slice(
             &self
                 .authority
