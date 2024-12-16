@@ -29,6 +29,7 @@ impl DNSSerialization for RR {
     fn serialize(&self) -> Bytes {
         let mut bytes = Vec::new();
         bytes.extend_from_slice(&self.name.as_bytes());
+        bytes.push(0);
         bytes.push((self.atype as u16 >> 8) as u8);
         bytes.push((self.atype as u16 & 0xFF) as u8);
         bytes.push((self.aclass as u16 >> 8) as u8);

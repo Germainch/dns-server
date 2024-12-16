@@ -5,8 +5,9 @@ use crate::lib::serde::DNSSerialization;
 use bytes::{Buf, Bytes};
 use std::net::{IpAddr, Ipv4Addr};
 use std::vec;
+use crate::lib::types::{Class, Type};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct DnsMessage {
     pub(crate) header: DnsHeader,
     pub(crate) question: Vec<DnsQuestion>, // usually 0 or 1
@@ -24,6 +25,24 @@ impl DnsMessage {
             authority: IpAddr::from(Ipv4Addr::new(127, 0, 0, 1)),
             additionnal_space: 0,
         }
+    }
+
+    pub fn add_answer(&mut self) {
+        if self.question.is_empty() {
+            return;
+        }
+
+        let answer = RR {
+            name: self.question.first().unwrap().name.clone(),
+            atype: Type::A,
+            aclass: Class::IN,
+            ttl: 60,
+            rdlength: 4,
+            rdata: 0x7F000001,
+        };
+        self.answer.push(answer);
+
+        self.header.ancount += 1;
     }
 }
 

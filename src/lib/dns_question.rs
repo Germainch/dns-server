@@ -4,7 +4,7 @@ use bytes::{Buf, Bytes};
 #[allow(dead_code, unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub struct DnsQuestion {
-    pub(crate) name: Vec<u8>, // Domain name in labels
+    pub(crate) name: String, // Domain name in labels
     pub(crate) qtype: Type,   // Question Type 2-bytes integer
     pub(crate) qclass: Class, // Question Class 2-bytes integer
 }
@@ -12,7 +12,7 @@ pub struct DnsQuestion {
 impl DnsQuestion {
     pub fn new() -> Self {
         DnsQuestion {
-            name: b"\x0ccodecrafters\x02io\x00".to_vec(),
+            name: "codecrafters.io".parse().unwrap(),
             qtype: Type::A,
             qclass: Class::IN,
         }
@@ -25,7 +25,7 @@ impl DnsQuestion {
 impl DNSSerialization for DnsQuestion {
     fn serialize(&self) -> Bytes {
         let mut bytes = Vec::new();
-        bytes.extend_from_slice(&self.name);
+        bytes.extend_from_slice(&self.name.as_bytes());
         bytes.push(0);
         bytes.push((self.qtype as u16 >> 8) as u8);
         bytes.push((self.qtype as u16 & 0xFF) as u8);
@@ -50,7 +50,7 @@ impl DNSSerialization for DnsQuestion {
         let qclass = Class::try_from(((s.get_u8() as u16) << 8) | s.get_u8() as u16);
 
         Some(DnsQuestion {
-            name:   name.into_bytes(),
+            name,
             qtype:  Type::A,
             qclass: Class::IN,
         })

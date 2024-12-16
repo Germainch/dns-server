@@ -32,11 +32,13 @@ fn main() {
                     }
                 };
 
-                let response = message.serialize();
-                let msg = response.iter().as_slice();
+                let mut response = message.clone();
+                response.add_answer();
+
+                let msg = response.serialize();
 
                 udp_socket
-                    .send_to(msg, source)
+                    .send_to(msg.as_ref(), source)
                     .expect("Failed to send a response");
             }
             Err(e) => {
