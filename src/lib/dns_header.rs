@@ -159,10 +159,10 @@ impl DNSSerialization for DnsHeader {
         Bytes::from(bytes)
     }
 
-    fn deserialize(s: &mut Bytes) -> Self {
+    fn deserialize(s: &mut Bytes) -> Option<Self> {
 
         if s.remaining() < 12 {
-            return Self::new();
+            return None;
         }
 
         let id = s.get_u16();
@@ -172,12 +172,12 @@ impl DNSSerialization for DnsHeader {
 
         let qr = match QR::try_from(a >> 7){
             Ok(res) => res,
-            Err(_) => return Self::new(),
+            Err(_) => return None,
         };
 
         let opcode = match OPCODE::try_from((a >> 3) & 0x0F){
             Ok(res) => res,
-            Err(_) => return Self::new(),
+            Err(_) => return None,
         };
 
         let aa = (a >> 3) & 0x01;
@@ -192,7 +192,7 @@ impl DNSSerialization for DnsHeader {
         let nscount = s.get_u16();
         let arcount = s.get_u16();
 
-        DnsHeader {
+        Some(DnsHeader {
             id,
             qr,
             opcode,
@@ -206,7 +206,7 @@ impl DNSSerialization for DnsHeader {
             ancount,
             nscount,
             arcount,
-        }
+        })
     }
 }
 

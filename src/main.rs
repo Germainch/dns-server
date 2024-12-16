@@ -24,7 +24,13 @@ fn main() {
                 println!("Received {} bytes from {}", size, source);
                 let mut bytes = Bytes::from(buf.to_vec());
 
-                let mut message = DnsMessage::deserialize(&mut bytes);
+                let mut message = match DnsMessage::deserialize(&mut bytes) {
+                    Some(m) => m,
+                    None => {
+                        eprintln!("Failed to deserialize the message");
+                        break;
+                    }
+                };
 
                 println!("{:?}", message.header);
                 println!("{:?}", message.question);
@@ -33,7 +39,6 @@ fn main() {
 
                 let response = message.serialize();
                 let msg = response.iter().as_slice();
-
 
                 udp_socket
                     .send_to(msg, source)

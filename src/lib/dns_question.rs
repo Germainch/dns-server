@@ -34,9 +34,9 @@ impl DNSSerialization for DnsQuestion {
 
         Bytes::from(bytes)
     }
-    fn deserialize(s: &mut Bytes) -> Self {
+    fn deserialize(s: &mut Bytes) -> Option<Self> {
         if !s.has_remaining() {
-            return Self::new();
+            return None;
         }
 
         let mut name: String = String::new();
@@ -49,10 +49,10 @@ impl DNSSerialization for DnsQuestion {
         let qtype = Type::try_from(((s.get_u8() as u16) << 8) | s.get_u8() as u16);
         let qclass = Class::try_from(((s.get_u8() as u16) << 8) | s.get_u8() as u16);
 
-        DnsQuestion {
+        Some(DnsQuestion {
             name:   name.into_bytes(),
             qtype:  Type::A,
             qclass: Class::IN,
-        }
+        })
     }
 }

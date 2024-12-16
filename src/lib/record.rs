@@ -1,4 +1,3 @@
-
 use crate::lib::serde::DNSSerialization;
 use crate::lib::types::{Class, Type};
 use bytes::{Buf, Bytes};
@@ -45,11 +44,9 @@ impl DNSSerialization for RR {
         Bytes::from(bytes)
     }
 
-    fn deserialize(mut s: &mut Bytes) -> Self {
-        let mut rr = RR::new();
-
-        if !s.has_remaining() {
-            return Self::new();
+    fn deserialize(mut s: &mut Bytes) -> Option<Self> {
+        if !s.has_remaining() || s.remaining() < 12 {
+            return None;
         }
 
         let mut name: String = String::new();
@@ -58,18 +55,25 @@ impl DNSSerialization for RR {
             name.push(b as char);
             b = s.get_u8();
         }
-
-        rr.name = name;
-
-        rr.atype = match Type::try_from(s.get_u16()){
-            Ok(t) => {t}
-            Err(_) => {return Self::new();}
+        let atype = match Type::try_from(s.get_u16()) {
+            Ok(t) => t,
+            Err(_) => return None,
         };
-        rr.aclass = Class::try_from(s.get_u16()).unwrap();
-        rr.ttl = s.get_u32();
-        rr.rdlength = s.get_u16();
-        rr.rdata = s.get_u32();
+        let aclass = match Class::try_from(s.get_u16()) {
+            Ok(c) => c,
+            Err(_) => return None,
+        };
+        let ttl = s.get_u32();
+        let rdlength = s.get_u16();
+        let rdata = s.get_u32();
 
-        rr
+        Some(RR {
+            name,
+            atype,
+            aclass,
+            ttl,
+            rdlength,
+            rdata,
+        })
     }
 }
